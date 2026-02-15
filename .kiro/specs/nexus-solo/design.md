@@ -19,51 +19,51 @@ The platform addresses three critical pain points: (1) time-intensive repetitive
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Command Center (Web UI)                   │
+│                    Command Center (Web UI)                  │
 │  • Unified Inbox  • Content Calendar  • Crisis Dashboard    │
 │  • Analytics View • Deal Pipeline     • Creator Switcher    │
 └─────────────────────────────────────────────────────────────┘
                               ↓ REST API
 ┌─────────────────────────────────────────────────────────────┐
-│                    API Gateway Layer                         │
+│                    API Gateway Layer                        │
 │  • Authentication  • Rate Limiting  • Request Routing       │
 └─────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
-│                  Agent Orchestration Layer                   │
-│                                                              │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │   Content    │  │    Trend     │  │    Crisis    │     │
-│  │    Agent     │  │    Agent     │  │    Agent     │     │
-│  └──────────────┘  └──────────────┘  └──────────────┘     │
-│                                                              │
-│  ┌──────────────┐  ┌──────────────┐                        │
-│  │     Deal     │  │  Analytics   │                        │
-│  │    Agent     │  │    Agent     │                        │
-│  └──────────────┘  └──────────────┘                        │
-│                                                              │
-│              Message Bus (Event-Driven Communication)        │
+│                  Agent Orchestration Layer                  │
+│                                                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
+│  │   Content    │  │    Trend     │  │    Crisis    │       │
+│  │    Agent     │  │    Agent     │  │    Agent     │       │
+│  └──────────────┘  └──────────────┘  └──────────────┘       │
+│                                                             │
+│  ┌──────────────┐  ┌──────────────┐                         │
+│  │     Deal     │  │  Analytics   │                         │
+│  │    Agent     │  │    Agent     │                         │
+│  └──────────────┘  └──────────────┘                         │
+│                                                             │
+│              Message Bus (Event-Driven Communication)       │
 └─────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
-│                      Data Layer                              │
-│                                                              │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │  Creator DNA │  │   Content    │  │  Analytics   │     │
-│  │   Database   │  │   Database   │  │   Database   │     │
-│  └──────────────┘  └──────────────┘  └──────────────┘     │
-│                                                              │
-│  ┌──────────────┐  ┌──────────────┐                        │
-│  │    Crisis    │  │  Brand Deal  │                        │
-│  │   Database   │  │   Database   │                        │
-│  └──────────────┘  └──────────────┘                        │
+│                      Data Layer                             │
+│                                                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
+│  │  Creator DNA │  │   Content    │  │  Analytics   │       │
+│  │   Database   │  │   Database   │  │   Database   │       │
+│  └──────────────┘  └──────────────┘  └──────────────┘       │
+│                                                             │
+│  ┌──────────────┐  ┌──────────────┐                         │
+│  │    Crisis    │  │  Brand Deal  │                         │
+│  │   Database   │  │   Database   │                         │
+│  └──────────────┘  └──────────────┘                         │
 └─────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
-│              Platform Integration Layer                      │
-│                                                              │
+│              Platform Integration Layer                     │
+│                                                             │
 │  Global: Instagram, YouTube, TikTok, X, LinkedIn, Facebook  │
-│  Bharat: ShareChat, Moj, Josh, Chingari                    │
+│  Bharat: ShareChat, Moj, Josh, Chingari                     │
 │  Services: Sentiment API, Translation API, LLM API          │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -91,6 +91,54 @@ User Request → API Gateway → Orchestrator → Agent Selection → Agent Exec
 - Supports conditional routing based on agent outputs
 - Enables human-in-the-loop checkpoints for critical decisions
 - Better suited for complex, stateful workflows than CrewAI or AutoGen
+
+### Agent Communication Flow Diagram
+
+```dot
+digraph AgentCommunicationFlow {
+  rankdir=LR;
+  node [shape=box, style=rounded, fontname="Arial"];
+  edge [fontname="Arial"];
+  
+  UserRequest [label="User Request", shape=ellipse, fillcolor=lightblue, style=filled];
+  APIGateway [label="API Gateway", fillcolor=lightgreen, style=filled];
+  Orchestrator [label="Orchestrator\n(Supervisor)", shape=hexagon, fillcolor=lavender, style=filled];
+  AgentSelection [label="Agent\nSelection", shape=diamond, fillcolor=lightyellow, style=filled];
+  
+  ContentAgent [label="Content\nAgent", fillcolor=lightsalmon, style=filled];
+  TrendAgent [label="Trend\nAgent", fillcolor=lightsalmon, style=filled];
+  CrisisAgent [label="Crisis\nAgent", fillcolor=lightsalmon, style=filled];
+  DealAgent [label="Deal\nAgent", fillcolor=lightsalmon, style=filled];
+  AnalyticsAgent [label="Analytics\nAgent", fillcolor=lightsalmon, style=filled];
+  
+  MessageBus [label="Message Bus\n(Events)", shape=cylinder, fillcolor=lightpink, style=filled];
+  DependentAgents [label="Dependent\nAgents", fillcolor=lightcyan, style="filled,dashed"];
+  Response [label="Response", shape=ellipse, fillcolor=lightblue, style=filled];
+  
+  UserRequest -> APIGateway [label="HTTP"];
+  APIGateway -> Orchestrator [label="Auth"];
+  Orchestrator -> AgentSelection;
+  
+  AgentSelection -> ContentAgent [label="content"];
+  AgentSelection -> TrendAgent [label="trend"];
+  AgentSelection -> CrisisAgent [label="crisis"];
+  AgentSelection -> DealAgent [label="deal"];
+  AgentSelection -> AnalyticsAgent [label="analytics"];
+  
+  ContentAgent -> MessageBus [style=dashed, label="event"];
+  TrendAgent -> MessageBus [style=dashed];
+  CrisisAgent -> MessageBus [style=dashed];
+  DealAgent -> MessageBus [style=dashed];
+  AnalyticsAgent -> MessageBus [style=dashed];
+  
+  MessageBus -> DependentAgents [style=bold];
+  
+  ContentAgent -> Response [style=dotted];
+  DependentAgents -> Response [style=dotted];
+}
+```
+
+*To view: Copy the diagram code and paste into [Graphviz Online](https://dreampuf.github.io/GraphvizOnline/)*
 
 ## Components and Interfaces
 
@@ -140,6 +188,56 @@ interface GeneratedContent {
 - LLM API (GPT-4, Claude, or similar)
 - Translation API for regional languages
 - Analytics Agent (for performance prediction)
+
+#### Content Generation Workflow
+
+```dot
+digraph ContentGenerationWorkflow {
+  rankdir=TB;
+  node [shape=box, style=rounded, fontname="Arial", fontsize=10];
+  edge [fontname="Arial", fontsize=9];
+  
+  Start [label="Content\nRequest", shape=ellipse, fillcolor=lightblue, style=filled];
+  Validate [label="Validate\nRequest", shape=diamond];
+  LoadDNA [label="Load Creator\nDNA Profile", fillcolor=lightgreen, style=filled];
+  CheckTrend [label="Trend-Based?", shape=diamond];
+  LoadTrend [label="Load Trend\nData", fillcolor=lightyellow, style=filled];
+  Generate [label="Generate Content\n(LLM)", fillcolor=lightsalmon, style=filled];
+  Optimize [label="Platform\nOptimization", fillcolor=lightyellow, style=filled];
+  Translate [label="Translate?", shape=diamond];
+  DoTranslate [label="Translate\n(Preserve Culture)", fillcolor=lavender, style=filled];
+  Score [label="Style Match\nScore", fillcolor=lightcyan, style=filled];
+  Predict [label="Performance\nPrediction", fillcolor=plum, style=filled];
+  CheckConf [label="Confidence\nOK?", shape=diamond];
+  Flag [label="Flag for\nReview", fillcolor=lightpink, style=filled];
+  Save [label="Save to\nDatabase", fillcolor=lightgray, style=filled];
+  Publish [label="Publish Event", shape=cylinder, fillcolor=mistyrose, style=filled];
+  End [label="Return\nResponse", shape=ellipse, fillcolor=lightblue, style=filled];
+  Error [label="Error", shape=ellipse, fillcolor=lightpink, style=filled];
+  
+  Start -> Validate;
+  Validate -> LoadDNA [label="valid"];
+  Validate -> Error [label="invalid"];
+  LoadDNA -> CheckTrend;
+  CheckTrend -> LoadTrend [label="yes"];
+  CheckTrend -> Generate [label="no"];
+  LoadTrend -> Generate;
+  Generate -> Optimize;
+  Optimize -> Translate;
+  Translate -> DoTranslate [label="yes"];
+  Translate -> Score [label="no"];
+  DoTranslate -> Score;
+  Score -> Predict;
+  Predict -> CheckConf;
+  CheckConf -> Save [label="yes"];
+  CheckConf -> Flag [label="no"];
+  Flag -> Save;
+  Save -> Publish;
+  Publish -> End;
+}
+```
+
+*Workflow shows: DNA loading → trend handling → LLM generation → platform optimization → translation → scoring → prediction*
 
 ### 2. Trend Agent
 
@@ -249,6 +347,63 @@ interface OutcomeSimulation {
 - Platform APIs (for real-time comment/mention streams)
 - Crisis Database (for historical crisis data)
 - Notification Service (email, SMS, in-app)
+
+#### Crisis Detection Workflow
+
+```dot
+digraph CrisisDetectionWorkflow {
+  rankdir=TB;
+  node [shape=box, style=rounded, fontname="Arial", fontsize=10];
+  edge [fontname="Arial", fontsize=9];
+  
+  Start [label="Real-Time\nMonitoring", shape=ellipse, fillcolor=lightblue, style=filled];
+  Stream [label="Stream Platform\nData", fillcolor=lightcyan, style=filled];
+  Analyze [label="Analyze\nSentiment", fillcolor=lavender, style=filled];
+  Update [label="Update 7-Day\nHistory", fillcolor=lightgray, style=filled];
+  CheckAnomaly [label="Sentiment Drop\n>0.3 in 1hr?", shape=diamond];
+  CalcThreat [label="Calculate\nThreat Level", fillcolor=lightyellow, style=filled];
+  Classify [label="Classify\nThreat", shape=diamond];
+  LogLow [label="Log Event\n(Low)", fillcolor=lightgreen, style=filled];
+  CreateCrisis [label="Create Crisis\nEvent", fillcolor=lightpink, style=filled];
+  GenStrategies [label="Generate 3-5\nStrategies", fillcolor=lightsalmon, style=filled];
+  Simulate [label="Simulate\nOutcomes", fillcolor=plum, style=filled];
+  Notify [label="Send\nNotifications", fillcolor=mistyrose, style=filled];
+  Display [label="Display Alert\nBanner", fillcolor=lightcoral, style=filled];
+  PublishEvent [label="Publish\nEvent", shape=cylinder, fillcolor=mistyrose, style=filled];
+  Wait [label="Wait for\nResponse", shape=parallelogram, fillcolor=lightblue, style=filled];
+  Execute [label="Execute\nStrategy", fillcolor=lightyellow, style=filled];
+  Track [label="Track\nOutcome", fillcolor=lightcyan, style=filled];
+  UpdateModels [label="Update\nModels", fillcolor=lavender, style=filled];
+  End [label="Resolved", shape=ellipse, fillcolor=lightgreen, style=filled];
+  
+  Start -> Stream;
+  Stream -> Analyze;
+  Analyze -> Update;
+  Update -> CheckAnomaly;
+  CheckAnomaly -> CalcThreat [label="yes"];
+  CheckAnomaly -> Stream [label="no", style=dashed];
+  CalcThreat -> Classify;
+  Classify -> LogLow [label="low"];
+  Classify -> CreateCrisis [label="med/high/\ncritical"];
+  LogLow -> Stream [style=dashed];
+  CreateCrisis -> GenStrategies;
+  GenStrategies -> Simulate;
+  Simulate -> Notify;
+  Notify -> Display;
+  Display -> PublishEvent;
+  PublishEvent -> Wait;
+  Wait -> Execute;
+  Execute -> Track;
+  Track -> UpdateModels;
+  UpdateModels -> End;
+  
+  {rank=same; CheckAnomaly; Note1}
+  Note1 [label="Target: ≤8 min\ndetection", shape=note, fillcolor=yellow, style=filled];
+  CheckAnomaly -> Note1 [style=dotted, arrowhead=none];
+}
+```
+
+*Workflow shows: Real-time monitoring → sentiment analysis → anomaly detection (8-min target) → threat classification → strategy generation → outcome simulation*
 
 ### 4. Deal Agent
 
@@ -647,6 +802,57 @@ type RegionalLanguage =
   | 'punjabi' 
   | 'odia'
 ```
+
+### Data Model Relationships Diagram
+
+```dot
+digraph DataModelRelationships {
+  rankdir=TB;
+  node [shape=record, style=rounded, fontname="Arial", fontsize=9];
+  edge [fontname="Arial", fontsize=8];
+  
+  Creator [label="{Creator|creatorId\lname\lplatforms\lstatus|onboard()\lconnect()}", fillcolor=lightblue, style=filled];
+  
+  CreatorDNA [label="{CreatorDNA|creatorId\lversion\llinguistics\lstyle\lcontentPatterns\lconfidenceScore|analyze()\lupdate()}", fillcolor=lightgreen, style=filled];
+  
+  Content [label="{Content|contentId\lcreatorId\ltext\lplatforms\lstatus\lgeneratedBy\lconfidenceScore|generate()\lschedule()\lpublish()}", fillcolor=lightyellow, style=filled];
+  
+  Performance [label="{Performance|contentId\llikes\lcomments\lshares\lviews\lengagementRate|track()\lanalyze()}", fillcolor=lavender, style=filled];
+  
+  CrisisEvent [label="{CrisisEvent|crisisId\lcreatorId\lthreatLevel\lsentimentDrop\laffectedPlatforms\lstatus|detect()\lgenerateStrategies()\lresolve()}", fillcolor=lightpink, style=filled];
+  
+  ResponseStrategy [label="{ResponseStrategy|strategyId\lcrisisId\ltype\lresponseText\lestimatedImpact|simulate()\lexecute()}", fillcolor=mistyrose, style=filled];
+  
+  BrandDeal [label="{BrandDeal|dealId\lcreatorId\lbrandName\lstatus\lproposedRate\lfinalRate|research()\lnegotiate()\ltrack()}", fillcolor=lightcyan, style=filled];
+  
+  MediaKit [label="{MediaKit|creatorId\lfollowerCounts\lengagementRates\laudienceDemographics\lpdfUrl|generate()\lupdate()}", fillcolor=paleturquoise, style=filled];
+  
+  PlatformConnection [label="{PlatformConnection|connectionId\lcreatorId\lplatform\lstatus\laccessToken\llastSyncAt|authenticate()\lsync()\lpublish()}", fillcolor=wheat, style=filled];
+  
+  TrendAlert [label="{TrendAlert|trendId\ltopic\lplatforms\lurgencyLevel\lpredictedPeakTime\lsuggestedCreators|monitor()\lpredict()\lmatch()}", fillcolor=gold, style=filled];
+  
+  Creator -> CreatorDNA [label="has", arrowhead=diamond];
+  Creator -> Content [label="creates"];
+  Creator -> CrisisEvent [label="experiences"];
+  Creator -> BrandDeal [label="negotiates"];
+  Creator -> MediaKit [label="owns", arrowhead=diamond];
+  Creator -> PlatformConnection [label="connects via"];
+  
+  CreatorDNA -> Content [label="influences", style=dashed];
+  Content -> Performance [label="has", arrowhead=diamond];
+  Content -> TrendAlert [label="responds to", style=dashed];
+  
+  CrisisEvent -> ResponseStrategy [label="generates"];
+  BrandDeal -> MediaKit [label="uses", style=dashed];
+  TrendAlert -> Content [label="triggers", style=dashed];
+  TrendAlert -> Creator [label="suggests", style=dashed];
+  
+  PlatformConnection -> Content [label="publishes", style=dashed];
+  PlatformConnection -> Performance [label="syncs", style=dashed];
+}
+```
+
+*Entity relationships showing: Creator as central entity → DNA profiles → Content generation → Performance tracking → Crisis/Deal/Trend workflows*
 
 ## Correctness Properties
 
@@ -1314,6 +1520,115 @@ Feature: {feature_name}, Property {number}: {property_text}
 - RPO (Recovery Point Objective): 1 hour
 - Automated failover for critical services
 - Regular disaster recovery drills (quarterly)
+
+### Deployment Architecture Diagram
+
+```dot
+digraph DeploymentArchitecture {
+  rankdir=TB;
+  node [shape=box, style=rounded, fontname="Arial", fontsize=9];
+  edge [fontname="Arial", fontsize=8];
+  
+  subgraph cluster_app {
+    label="Application Tier";
+    style=filled;
+    fillcolor=lightblue;
+    
+    WebApp [label="Web App\n(React/Next.js)", shape=component];
+    APIGateway [label="API Gateway\n(Node.js/FastAPI)", shape=component];
+    AgentOrch [label="Agent Orchestration\n(LangGraph)", shape=component];
+    BackgroundJobs [label="Background Jobs\n(Celery/Bull)", shape=component];
+  }
+  
+  subgraph cluster_data {
+    label="Data Tier";
+    style=filled;
+    fillcolor=lightgreen;
+    
+    PostgreSQL [label="PostgreSQL\n(Primary DB)", shape=cylinder];
+    TimescaleDB [label="TimescaleDB\n(Time-Series)", shape=cylinder];
+    Redis [label="Redis\n(Cache)", shape=cylinder];
+    S3 [label="S3\n(Object Storage)", shape=cylinder];
+  }
+  
+  subgraph cluster_ai {
+    label="AI/ML Tier";
+    style=filled;
+    fillcolor=lightyellow;
+    
+    LLM [label="LLM API\n(GPT-4/Claude)", shape=component];
+    Sentiment [label="Sentiment API\n(Hugging Face)", shape=component];
+    Translation [label="Translation API\n(Google/DeepL)", shape=component];
+    MLServing [label="ML Serving\n(TF/PyTorch)", shape=component];
+  }
+  
+  subgraph cluster_messaging {
+    label="Messaging";
+    style=filled;
+    fillcolor=lightpink;
+    
+    Kafka [label="Kafka\n(Events)", shape=cylinder];
+    WebSocket [label="WebSocket\n(Real-Time)", shape=component];
+  }
+  
+  subgraph cluster_monitoring {
+    label="Monitoring";
+    style=filled;
+    fillcolor=lavender;
+    
+    Prometheus [label="Prometheus", shape=component];
+    Grafana [label="Grafana", shape=component];
+    ELK [label="ELK Stack", shape=component];
+    Jaeger [label="Jaeger", shape=component];
+    Sentry [label="Sentry", shape=component];
+  }
+  
+  subgraph cluster_external {
+    label="External APIs";
+    style=filled;
+    fillcolor=wheat;
+    
+    SocialPlatforms [label="Social Platforms\n(Instagram, YouTube,\nTikTok, X, etc.)", shape=cloud];
+    BharatPlatforms [label="Bharat Platforms\n(ShareChat, Moj,\nJosh, Chingari)", shape=cloud];
+  }
+  
+  LoadBalancer [label="Load Balancer", shape=hexagon, fillcolor=lightblue, style=filled];
+  
+  LoadBalancer -> WebApp;
+  LoadBalancer -> APIGateway;
+  WebApp -> APIGateway;
+  APIGateway -> AgentOrch;
+  APIGateway -> Redis [label="cache"];
+  AgentOrch -> BackgroundJobs;
+  AgentOrch -> Kafka [label="publish"];
+  BackgroundJobs -> Kafka [label="consume"];
+  AgentOrch -> PostgreSQL;
+  AgentOrch -> TimescaleDB;
+  AgentOrch -> S3;
+  AgentOrch -> LLM;
+  AgentOrch -> Sentiment;
+  AgentOrch -> Translation;
+  AgentOrch -> MLServing;
+  WebApp -> WebSocket;
+  Kafka -> WebSocket;
+  AgentOrch -> SocialPlatforms;
+  AgentOrch -> BharatPlatforms;
+  
+  WebApp -> Prometheus [style=dashed];
+  APIGateway -> Prometheus [style=dashed];
+  AgentOrch -> Prometheus [style=dashed];
+  Prometheus -> Grafana;
+  WebApp -> ELK [style=dashed, label="logs"];
+  APIGateway -> ELK [style=dashed];
+  AgentOrch -> ELK [style=dashed];
+  WebApp -> Jaeger [style=dashed, label="traces"];
+  APIGateway -> Jaeger [style=dashed];
+  WebApp -> Sentry [style=dashed, label="errors"];
+  APIGateway -> Sentry [style=dashed];
+}
+```
+
+*Infrastructure showing: Load balancer → Application tier (Web/API/Agents) → Data tier (PostgreSQL/TimescaleDB/Redis/S3) → AI/ML tier → Messaging (Kafka/WebSocket) → Monitoring stack → External platform APIs*
 
 ## Future Enhancements
 
