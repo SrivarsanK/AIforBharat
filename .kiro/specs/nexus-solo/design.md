@@ -94,51 +94,39 @@ User Request → API Gateway → Orchestrator → Agent Selection → Agent Exec
 
 ### Agent Communication Flow Diagram
 
-```dot
-digraph AgentCommunicationFlow {
-  rankdir=LR;
-  node [shape=box, style=rounded, fontname="Arial"];
-  edge [fontname="Arial"];
-  
-  UserRequest [label="User Request", shape=ellipse, fillcolor=lightblue, style=filled];
-  APIGateway [label="API Gateway", fillcolor=lightgreen, style=filled];
-  Orchestrator [label="Orchestrator\n(Supervisor)", shape=hexagon, fillcolor=lavender, style=filled];
-  AgentSelection [label="Agent\nSelection", shape=diamond, fillcolor=lightyellow, style=filled];
-  
-  ContentAgent [label="Content\nAgent", fillcolor=lightsalmon, style=filled];
-  TrendAgent [label="Trend\nAgent", fillcolor=lightsalmon, style=filled];
-  CrisisAgent [label="Crisis\nAgent", fillcolor=lightsalmon, style=filled];
-  DealAgent [label="Deal\nAgent", fillcolor=lightsalmon, style=filled];
-  AnalyticsAgent [label="Analytics\nAgent", fillcolor=lightsalmon, style=filled];
-  
-  MessageBus [label="Message Bus\n(Events)", shape=cylinder, fillcolor=lightpink, style=filled];
-  DependentAgents [label="Dependent\nAgents", fillcolor=lightcyan, style="filled,dashed"];
-  Response [label="Response", shape=ellipse, fillcolor=lightblue, style=filled];
-  
-  UserRequest -> APIGateway [label="HTTP"];
-  APIGateway -> Orchestrator [label="Auth"];
-  Orchestrator -> AgentSelection;
-  
-  AgentSelection -> ContentAgent [label="content"];
-  AgentSelection -> TrendAgent [label="trend"];
-  AgentSelection -> CrisisAgent [label="crisis"];
-  AgentSelection -> DealAgent [label="deal"];
-  AgentSelection -> AnalyticsAgent [label="analytics"];
-  
-  ContentAgent -> MessageBus [style=dashed, label="event"];
-  TrendAgent -> MessageBus [style=dashed];
-  CrisisAgent -> MessageBus [style=dashed];
-  DealAgent -> MessageBus [style=dashed];
-  AnalyticsAgent -> MessageBus [style=dashed];
-  
-  MessageBus -> DependentAgents [style=bold];
-  
-  ContentAgent -> Response [style=dotted];
-  DependentAgents -> Response [style=dotted];
-}
+```mermaid
+graph LR
+    UserRequest([User Request]):::userNode --> APIGateway[API Gateway]:::apiNode
+    APIGateway -->|Authenticated Request| Orchestrator{Orchestrator<br/>Supervisor Pattern}:::orchNode
+    Orchestrator --> AgentSelection{Agent<br/>Selection}:::decisionNode
+    
+    AgentSelection -->|content| ContentAgent[Content Agent]:::agentNode
+    AgentSelection -->|trend| TrendAgent[Trend Agent]:::agentNode
+    AgentSelection -->|crisis| CrisisAgent[Crisis Agent]:::agentNode
+    AgentSelection -->|deal| DealAgent[Deal Agent]:::agentNode
+    AgentSelection -->|analytics| AnalyticsAgent[Analytics Agent]:::agentNode
+    
+    ContentAgent -.->|event| MessageBus[(Message Bus<br/>Event Stream)]:::busNode
+    TrendAgent -.->|event| MessageBus
+    CrisisAgent -.->|event| MessageBus
+    DealAgent -.->|event| MessageBus
+    AnalyticsAgent -.->|event| MessageBus
+    
+    MessageBus ==>|notify| DependentAgents[Dependent Agents<br/>React to Events]:::depNode
+    
+    ContentAgent -.-> Response([Response]):::userNode
+    DependentAgents -.-> Response
+    
+    classDef userNode fill:#add8e6,stroke:#333,stroke-width:2px
+    classDef apiNode fill:#90ee90,stroke:#333,stroke-width:2px
+    classDef orchNode fill:#e6e6fa,stroke:#333,stroke-width:2px
+    classDef decisionNode fill:#ffffe0,stroke:#333,stroke-width:2px
+    classDef agentNode fill:#ffa07a,stroke:#333,stroke-width:2px
+    classDef busNode fill:#ffb6c1,stroke:#333,stroke-width:2px
+    classDef depNode fill:#e0ffff,stroke:#333,stroke-width:2px
 ```
 
-*To view: Copy the diagram code and paste into [Graphviz Online](https://dreampuf.github.io/GraphvizOnline/)*
+*Diagram shows: User request → API Gateway → Orchestrator → Agent selection → Agents publish events to Message Bus → Dependent agents react*
 
 ## Components and Interfaces
 
@@ -191,50 +179,40 @@ interface GeneratedContent {
 
 #### Content Generation Workflow
 
-```dot
-digraph ContentGenerationWorkflow {
-  rankdir=TB;
-  node [shape=box, style=rounded, fontname="Arial", fontsize=10];
-  edge [fontname="Arial", fontsize=9];
-  
-  Start [label="Content\nRequest", shape=ellipse, fillcolor=lightblue, style=filled];
-  Validate [label="Validate\nRequest", shape=diamond];
-  LoadDNA [label="Load Creator\nDNA Profile", fillcolor=lightgreen, style=filled];
-  CheckTrend [label="Trend-Based?", shape=diamond];
-  LoadTrend [label="Load Trend\nData", fillcolor=lightyellow, style=filled];
-  Generate [label="Generate Content\n(LLM)", fillcolor=lightsalmon, style=filled];
-  Optimize [label="Platform\nOptimization", fillcolor=lightyellow, style=filled];
-  Translate [label="Translate?", shape=diamond];
-  DoTranslate [label="Translate\n(Preserve Culture)", fillcolor=lavender, style=filled];
-  Score [label="Style Match\nScore", fillcolor=lightcyan, style=filled];
-  Predict [label="Performance\nPrediction", fillcolor=plum, style=filled];
-  CheckConf [label="Confidence\nOK?", shape=diamond];
-  Flag [label="Flag for\nReview", fillcolor=lightpink, style=filled];
-  Save [label="Save to\nDatabase", fillcolor=lightgray, style=filled];
-  Publish [label="Publish Event", shape=cylinder, fillcolor=mistyrose, style=filled];
-  End [label="Return\nResponse", shape=ellipse, fillcolor=lightblue, style=filled];
-  Error [label="Error", shape=ellipse, fillcolor=lightpink, style=filled];
-  
-  Start -> Validate;
-  Validate -> LoadDNA [label="valid"];
-  Validate -> Error [label="invalid"];
-  LoadDNA -> CheckTrend;
-  CheckTrend -> LoadTrend [label="yes"];
-  CheckTrend -> Generate [label="no"];
-  LoadTrend -> Generate;
-  Generate -> Optimize;
-  Optimize -> Translate;
-  Translate -> DoTranslate [label="yes"];
-  Translate -> Score [label="no"];
-  DoTranslate -> Score;
-  Score -> Predict;
-  Predict -> CheckConf;
-  CheckConf -> Save [label="yes"];
-  CheckConf -> Flag [label="no"];
-  Flag -> Save;
-  Save -> Publish;
-  Publish -> End;
-}
+```mermaid
+flowchart TB
+    Start([Content<br/>Request]):::startNode --> Validate{Validate<br/>Request}:::decisionNode
+    Validate -->|valid| LoadDNA[Load Creator<br/>DNA Profile]:::processNode
+    Validate -->|invalid| Error([Error]):::errorNode
+    LoadDNA --> CheckTrend{Trend-Based?}:::decisionNode
+    CheckTrend -->|yes| LoadTrend[Load Trend<br/>Data]:::trendNode
+    CheckTrend -->|no| Generate[Generate Content<br/>LLM]:::llmNode
+    LoadTrend --> Generate
+    Generate --> Optimize[Platform<br/>Optimization]:::trendNode
+    Optimize --> Translate{Translate?}:::decisionNode
+    Translate -->|yes| DoTranslate[Translate<br/>Preserve Culture]:::translateNode
+    Translate -->|no| Score[Style Match<br/>Score]:::scoreNode
+    DoTranslate --> Score
+    Score --> Predict[Performance<br/>Prediction]:::predictNode
+    Predict --> CheckConf{Confidence<br/>OK?}:::decisionNode
+    CheckConf -->|yes| Save[Save to<br/>Database]:::saveNode
+    CheckConf -->|no| Flag[Flag for<br/>Review]:::flagNode
+    Flag --> Save
+    Save --> Publish[(Publish Event)]:::busNode
+    Publish --> End([Return<br/>Response]):::startNode
+    
+    classDef startNode fill:#add8e6,stroke:#333,stroke-width:2px
+    classDef decisionNode fill:#ffffe0,stroke:#333,stroke-width:2px
+    classDef processNode fill:#90ee90,stroke:#333,stroke-width:2px
+    classDef trendNode fill:#ffffe0,stroke:#333,stroke-width:2px
+    classDef llmNode fill:#ffa07a,stroke:#333,stroke-width:2px
+    classDef translateNode fill:#e6e6fa,stroke:#333,stroke-width:2px
+    classDef scoreNode fill:#e0ffff,stroke:#333,stroke-width:2px
+    classDef predictNode fill:#dda0dd,stroke:#333,stroke-width:2px
+    classDef flagNode fill:#ffb6c1,stroke:#333,stroke-width:2px
+    classDef saveNode fill:#d3d3d3,stroke:#333,stroke-width:2px
+    classDef busNode fill:#ffe4e1,stroke:#333,stroke-width:2px
+    classDef errorNode fill:#ffb6c1,stroke:#333,stroke-width:2px
 ```
 
 *Workflow shows: DNA loading → trend handling → LLM generation → platform optimization → translation → scoring → prediction*
@@ -350,57 +328,51 @@ interface OutcomeSimulation {
 
 #### Crisis Detection Workflow
 
-```dot
-digraph CrisisDetectionWorkflow {
-  rankdir=TB;
-  node [shape=box, style=rounded, fontname="Arial", fontsize=10];
-  edge [fontname="Arial", fontsize=9];
-  
-  Start [label="Real-Time\nMonitoring", shape=ellipse, fillcolor=lightblue, style=filled];
-  Stream [label="Stream Platform\nData", fillcolor=lightcyan, style=filled];
-  Analyze [label="Analyze\nSentiment", fillcolor=lavender, style=filled];
-  Update [label="Update 7-Day\nHistory", fillcolor=lightgray, style=filled];
-  CheckAnomaly [label="Sentiment Drop\n>0.3 in 1hr?", shape=diamond];
-  CalcThreat [label="Calculate\nThreat Level", fillcolor=lightyellow, style=filled];
-  Classify [label="Classify\nThreat", shape=diamond];
-  LogLow [label="Log Event\n(Low)", fillcolor=lightgreen, style=filled];
-  CreateCrisis [label="Create Crisis\nEvent", fillcolor=lightpink, style=filled];
-  GenStrategies [label="Generate 3-5\nStrategies", fillcolor=lightsalmon, style=filled];
-  Simulate [label="Simulate\nOutcomes", fillcolor=plum, style=filled];
-  Notify [label="Send\nNotifications", fillcolor=mistyrose, style=filled];
-  Display [label="Display Alert\nBanner", fillcolor=lightcoral, style=filled];
-  PublishEvent [label="Publish\nEvent", shape=cylinder, fillcolor=mistyrose, style=filled];
-  Wait [label="Wait for\nResponse", shape=parallelogram, fillcolor=lightblue, style=filled];
-  Execute [label="Execute\nStrategy", fillcolor=lightyellow, style=filled];
-  Track [label="Track\nOutcome", fillcolor=lightcyan, style=filled];
-  UpdateModels [label="Update\nModels", fillcolor=lavender, style=filled];
-  End [label="Resolved", shape=ellipse, fillcolor=lightgreen, style=filled];
-  
-  Start -> Stream;
-  Stream -> Analyze;
-  Analyze -> Update;
-  Update -> CheckAnomaly;
-  CheckAnomaly -> CalcThreat [label="yes"];
-  CheckAnomaly -> Stream [label="no", style=dashed];
-  CalcThreat -> Classify;
-  Classify -> LogLow [label="low"];
-  Classify -> CreateCrisis [label="med/high/\ncritical"];
-  LogLow -> Stream [style=dashed];
-  CreateCrisis -> GenStrategies;
-  GenStrategies -> Simulate;
-  Simulate -> Notify;
-  Notify -> Display;
-  Display -> PublishEvent;
-  PublishEvent -> Wait;
-  Wait -> Execute;
-  Execute -> Track;
-  Track -> UpdateModels;
-  UpdateModels -> End;
-  
-  {rank=same; CheckAnomaly; Note1}
-  Note1 [label="Target: ≤8 min\ndetection", shape=note, fillcolor=yellow, style=filled];
-  CheckAnomaly -> Note1 [style=dotted, arrowhead=none];
-}
+```mermaid
+flowchart TB
+    Start([Real-Time<br/>Monitoring]):::startNode --> Stream[Stream Platform<br/>Data]:::streamNode
+    Stream --> Analyze[Analyze<br/>Sentiment]:::analyzeNode
+    Analyze --> Update[Update 7-Day<br/>History]:::updateNode
+    Update --> CheckAnomaly{Sentiment Drop<br/>>0.3 in 1hr?}:::decisionNode
+    CheckAnomaly -->|yes| CalcThreat[Calculate<br/>Threat Level]:::calcNode
+    CheckAnomaly -.->|no| Stream
+    CalcThreat --> Classify{Classify<br/>Threat}:::decisionNode
+    Classify -->|low| LogLow[Log Event<br/>Low]:::logNode
+    Classify -->|med/high/critical| CreateCrisis[Create Crisis<br/>Event]:::crisisNode
+    LogLow -.-> Stream
+    CreateCrisis --> GenStrategies[Generate 3-5<br/>Strategies]:::strategyNode
+    GenStrategies --> Simulate[Simulate<br/>Outcomes]:::simulateNode
+    Simulate --> Notify[Send<br/>Notifications]:::notifyNode
+    Notify --> Display[Display Alert<br/>Banner]:::displayNode
+    Display --> PublishEvent[(Publish<br/>Event)]:::busNode
+    PublishEvent --> Wait[/Wait for<br/>Response/]:::waitNode
+    Wait --> Execute[Execute<br/>Strategy]:::execNode
+    Execute --> Track[Track<br/>Outcome]:::trackNode
+    Track --> UpdateModels[Update<br/>Models]:::modelNode
+    UpdateModels --> End([Resolved]):::endNode
+    
+    Note[Target: ≤8 min<br/>detection]:::noteNode
+    CheckAnomaly -.-> Note
+    
+    classDef startNode fill:#add8e6,stroke:#333,stroke-width:2px
+    classDef streamNode fill:#e0ffff,stroke:#333,stroke-width:2px
+    classDef analyzeNode fill:#e6e6fa,stroke:#333,stroke-width:2px
+    classDef updateNode fill:#d3d3d3,stroke:#333,stroke-width:2px
+    classDef decisionNode fill:#ffffe0,stroke:#333,stroke-width:2px
+    classDef calcNode fill:#ffffe0,stroke:#333,stroke-width:2px
+    classDef logNode fill:#90ee90,stroke:#333,stroke-width:2px
+    classDef crisisNode fill:#ffb6c1,stroke:#333,stroke-width:2px
+    classDef strategyNode fill:#ffa07a,stroke:#333,stroke-width:2px
+    classDef simulateNode fill:#dda0dd,stroke:#333,stroke-width:2px
+    classDef notifyNode fill:#ffe4e1,stroke:#333,stroke-width:2px
+    classDef displayNode fill:#f08080,stroke:#333,stroke-width:2px
+    classDef busNode fill:#ffe4e1,stroke:#333,stroke-width:2px
+    classDef waitNode fill:#add8e6,stroke:#333,stroke-width:2px
+    classDef execNode fill:#ffffe0,stroke:#333,stroke-width:2px
+    classDef trackNode fill:#e0ffff,stroke:#333,stroke-width:2px
+    classDef modelNode fill:#e6e6fa,stroke:#333,stroke-width:2px
+    classDef endNode fill:#90ee90,stroke:#333,stroke-width:2px
+    classDef noteNode fill:#ffff00,stroke:#333,stroke-width:2px
 ```
 
 *Workflow shows: Real-time monitoring → sentiment analysis → anomaly detection (8-min target) → threat classification → strategy generation → outcome simulation*
@@ -805,51 +777,113 @@ type RegionalLanguage =
 
 ### Data Model Relationships Diagram
 
-```dot
-digraph DataModelRelationships {
-  rankdir=TB;
-  node [shape=record, style=rounded, fontname="Arial", fontsize=9];
-  edge [fontname="Arial", fontsize=8];
-  
-  Creator [label="{Creator|creatorId\lname\lplatforms\lstatus|onboard()\lconnect()}", fillcolor=lightblue, style=filled];
-  
-  CreatorDNA [label="{CreatorDNA|creatorId\lversion\llinguistics\lstyle\lcontentPatterns\lconfidenceScore|analyze()\lupdate()}", fillcolor=lightgreen, style=filled];
-  
-  Content [label="{Content|contentId\lcreatorId\ltext\lplatforms\lstatus\lgeneratedBy\lconfidenceScore|generate()\lschedule()\lpublish()}", fillcolor=lightyellow, style=filled];
-  
-  Performance [label="{Performance|contentId\llikes\lcomments\lshares\lviews\lengagementRate|track()\lanalyze()}", fillcolor=lavender, style=filled];
-  
-  CrisisEvent [label="{CrisisEvent|crisisId\lcreatorId\lthreatLevel\lsentimentDrop\laffectedPlatforms\lstatus|detect()\lgenerateStrategies()\lresolve()}", fillcolor=lightpink, style=filled];
-  
-  ResponseStrategy [label="{ResponseStrategy|strategyId\lcrisisId\ltype\lresponseText\lestimatedImpact|simulate()\lexecute()}", fillcolor=mistyrose, style=filled];
-  
-  BrandDeal [label="{BrandDeal|dealId\lcreatorId\lbrandName\lstatus\lproposedRate\lfinalRate|research()\lnegotiate()\ltrack()}", fillcolor=lightcyan, style=filled];
-  
-  MediaKit [label="{MediaKit|creatorId\lfollowerCounts\lengagementRates\laudienceDemographics\lpdfUrl|generate()\lupdate()}", fillcolor=paleturquoise, style=filled];
-  
-  PlatformConnection [label="{PlatformConnection|connectionId\lcreatorId\lplatform\lstatus\laccessToken\llastSyncAt|authenticate()\lsync()\lpublish()}", fillcolor=wheat, style=filled];
-  
-  TrendAlert [label="{TrendAlert|trendId\ltopic\lplatforms\lurgencyLevel\lpredictedPeakTime\lsuggestedCreators|monitor()\lpredict()\lmatch()}", fillcolor=gold, style=filled];
-  
-  Creator -> CreatorDNA [label="has", arrowhead=diamond];
-  Creator -> Content [label="creates"];
-  Creator -> CrisisEvent [label="experiences"];
-  Creator -> BrandDeal [label="negotiates"];
-  Creator -> MediaKit [label="owns", arrowhead=diamond];
-  Creator -> PlatformConnection [label="connects via"];
-  
-  CreatorDNA -> Content [label="influences", style=dashed];
-  Content -> Performance [label="has", arrowhead=diamond];
-  Content -> TrendAlert [label="responds to", style=dashed];
-  
-  CrisisEvent -> ResponseStrategy [label="generates"];
-  BrandDeal -> MediaKit [label="uses", style=dashed];
-  TrendAlert -> Content [label="triggers", style=dashed];
-  TrendAlert -> Creator [label="suggests", style=dashed];
-  
-  PlatformConnection -> Content [label="publishes", style=dashed];
-  PlatformConnection -> Performance [label="syncs", style=dashed];
-}
+```mermaid
+erDiagram
+    Creator ||--|| CreatorDNA : has
+    Creator ||--o{ Content : creates
+    Creator ||--o{ CrisisEvent : experiences
+    Creator ||--o{ BrandDeal : negotiates
+    Creator ||--|| MediaKit : owns
+    Creator ||--o{ PlatformConnection : "connects via"
+    
+    CreatorDNA ||..o{ Content : influences
+    Content ||--|| Performance : has
+    Content }o..|| TrendAlert : "responds to"
+    
+    CrisisEvent ||--o{ ResponseStrategy : generates
+    BrandDeal }o..|| MediaKit : uses
+    TrendAlert }o..o{ Content : triggers
+    TrendAlert }o..o{ Creator : suggests
+    
+    PlatformConnection }o..o{ Content : publishes
+    PlatformConnection }o..o{ Performance : syncs
+    
+    Creator {
+        string creatorId PK
+        string name
+        string[] platforms
+        string status
+    }
+    
+    CreatorDNA {
+        string creatorId FK
+        int version
+        object linguistics
+        object style
+        object contentPatterns
+        float confidenceScore
+    }
+    
+    Content {
+        string contentId PK
+        string creatorId FK
+        string text
+        string[] platforms
+        string status
+        string generatedBy
+        float confidenceScore
+    }
+    
+    Performance {
+        string contentId FK
+        int likes
+        int comments
+        int shares
+        int views
+        float engagementRate
+    }
+    
+    CrisisEvent {
+        string crisisId PK
+        string creatorId FK
+        string threatLevel
+        float sentimentDrop
+        string[] affectedPlatforms
+        string status
+    }
+    
+    ResponseStrategy {
+        string strategyId PK
+        string crisisId FK
+        string type
+        string responseText
+        object estimatedImpact
+    }
+    
+    BrandDeal {
+        string dealId PK
+        string creatorId FK
+        string brandName
+        string status
+        float proposedRate
+        float finalRate
+    }
+    
+    MediaKit {
+        string creatorId FK
+        object followerCounts
+        object engagementRates
+        object audienceDemographics
+        string pdfUrl
+    }
+    
+    PlatformConnection {
+        string connectionId PK
+        string creatorId FK
+        string platform
+        string status
+        string accessToken
+        datetime lastSyncAt
+    }
+    
+    TrendAlert {
+        string trendId PK
+        string topic
+        string[] platforms
+        string urgencyLevel
+        datetime predictedPeakTime
+        string[] suggestedCreators
+    }
 ```
 
 *Entity relationships showing: Creator as central entity → DNA profiles → Content generation → Performance tracking → Crisis/Deal/Trend workflows*
@@ -1523,109 +1557,88 @@ Feature: {feature_name}, Property {number}: {property_text}
 
 ### Deployment Architecture Diagram
 
-```dot
-digraph DeploymentArchitecture {
-  rankdir=TB;
-  node [shape=box, style=rounded, fontname="Arial", fontsize=9];
-  edge [fontname="Arial", fontsize=8];
-  
-  subgraph cluster_app {
-    label="Application Tier";
-    style=filled;
-    fillcolor=lightblue;
+```mermaid
+graph TB
+    LoadBalancer{{Load Balancer}}:::lbNode
     
-    WebApp [label="Web App\n(React/Next.js)", shape=component];
-    APIGateway [label="API Gateway\n(Node.js/FastAPI)", shape=component];
-    AgentOrch [label="Agent Orchestration\n(LangGraph)", shape=component];
-    BackgroundJobs [label="Background Jobs\n(Celery/Bull)", shape=component];
-  }
-  
-  subgraph cluster_data {
-    label="Data Tier";
-    style=filled;
-    fillcolor=lightgreen;
+    subgraph AppTier["Application Tier"]
+        WebApp[Web App<br/>React/Next.js]:::appNode
+        APIGateway[API Gateway<br/>Node.js/FastAPI]:::appNode
+        AgentOrch[Agent Orchestration<br/>LangGraph]:::appNode
+        BackgroundJobs[Background Jobs<br/>Celery/Bull]:::appNode
+    end
     
-    PostgreSQL [label="PostgreSQL\n(Primary DB)", shape=cylinder];
-    TimescaleDB [label="TimescaleDB\n(Time-Series)", shape=cylinder];
-    Redis [label="Redis\n(Cache)", shape=cylinder];
-    S3 [label="S3\n(Object Storage)", shape=cylinder];
-  }
-  
-  subgraph cluster_ai {
-    label="AI/ML Tier";
-    style=filled;
-    fillcolor=lightyellow;
+    subgraph DataTier["Data Tier"]
+        PostgreSQL[(PostgreSQL<br/>Primary DB)]:::dataNode
+        TimescaleDB[(TimescaleDB<br/>Time-Series)]:::dataNode
+        Redis[(Redis<br/>Cache)]:::dataNode
+        S3[(S3<br/>Object Storage)]:::dataNode
+    end
     
-    LLM [label="LLM API\n(GPT-4/Claude)", shape=component];
-    Sentiment [label="Sentiment API\n(Hugging Face)", shape=component];
-    Translation [label="Translation API\n(Google/DeepL)", shape=component];
-    MLServing [label="ML Serving\n(TF/PyTorch)", shape=component];
-  }
-  
-  subgraph cluster_messaging {
-    label="Messaging";
-    style=filled;
-    fillcolor=lightpink;
+    subgraph AITier["AI/ML Tier"]
+        LLM[LLM API<br/>GPT-4/Claude]:::aiNode
+        Sentiment[Sentiment API<br/>Hugging Face]:::aiNode
+        Translation[Translation API<br/>Google/DeepL]:::aiNode
+        MLServing[ML Serving<br/>TF/PyTorch]:::aiNode
+    end
     
-    Kafka [label="Kafka\n(Events)", shape=cylinder];
-    WebSocket [label="WebSocket\n(Real-Time)", shape=component];
-  }
-  
-  subgraph cluster_monitoring {
-    label="Monitoring";
-    style=filled;
-    fillcolor=lavender;
+    subgraph Messaging["Messaging"]
+        Kafka[(Kafka<br/>Events)]:::msgNode
+        WebSocket[WebSocket<br/>Real-Time]:::msgNode
+    end
     
-    Prometheus [label="Prometheus", shape=component];
-    Grafana [label="Grafana", shape=component];
-    ELK [label="ELK Stack", shape=component];
-    Jaeger [label="Jaeger", shape=component];
-    Sentry [label="Sentry", shape=component];
-  }
-  
-  subgraph cluster_external {
-    label="External APIs";
-    style=filled;
-    fillcolor=wheat;
+    subgraph Monitoring["Monitoring"]
+        Prometheus[Prometheus]:::monNode
+        Grafana[Grafana]:::monNode
+        ELK[ELK Stack]:::monNode
+        Jaeger[Jaeger]:::monNode
+        Sentry[Sentry]:::monNode
+    end
     
-    SocialPlatforms [label="Social Platforms\n(Instagram, YouTube,\nTikTok, X, etc.)", shape=cloud];
-    BharatPlatforms [label="Bharat Platforms\n(ShareChat, Moj,\nJosh, Chingari)", shape=cloud];
-  }
-  
-  LoadBalancer [label="Load Balancer", shape=hexagon, fillcolor=lightblue, style=filled];
-  
-  LoadBalancer -> WebApp;
-  LoadBalancer -> APIGateway;
-  WebApp -> APIGateway;
-  APIGateway -> AgentOrch;
-  APIGateway -> Redis [label="cache"];
-  AgentOrch -> BackgroundJobs;
-  AgentOrch -> Kafka [label="publish"];
-  BackgroundJobs -> Kafka [label="consume"];
-  AgentOrch -> PostgreSQL;
-  AgentOrch -> TimescaleDB;
-  AgentOrch -> S3;
-  AgentOrch -> LLM;
-  AgentOrch -> Sentiment;
-  AgentOrch -> Translation;
-  AgentOrch -> MLServing;
-  WebApp -> WebSocket;
-  Kafka -> WebSocket;
-  AgentOrch -> SocialPlatforms;
-  AgentOrch -> BharatPlatforms;
-  
-  WebApp -> Prometheus [style=dashed];
-  APIGateway -> Prometheus [style=dashed];
-  AgentOrch -> Prometheus [style=dashed];
-  Prometheus -> Grafana;
-  WebApp -> ELK [style=dashed, label="logs"];
-  APIGateway -> ELK [style=dashed];
-  AgentOrch -> ELK [style=dashed];
-  WebApp -> Jaeger [style=dashed, label="traces"];
-  APIGateway -> Jaeger [style=dashed];
-  WebApp -> Sentry [style=dashed, label="errors"];
-  APIGateway -> Sentry [style=dashed];
-}
+    subgraph External["External APIs"]
+        SocialPlatforms{{Social Platforms<br/>Instagram, YouTube<br/>TikTok, X, etc.}}:::extNode
+        BharatPlatforms{{Bharat Platforms<br/>ShareChat, Moj<br/>Josh, Chingari}}:::extNode
+    end
+    
+    LoadBalancer --> WebApp
+    LoadBalancer --> APIGateway
+    WebApp --> APIGateway
+    APIGateway --> AgentOrch
+    APIGateway -->|cache| Redis
+    AgentOrch --> BackgroundJobs
+    AgentOrch -->|publish| Kafka
+    BackgroundJobs -->|consume| Kafka
+    AgentOrch --> PostgreSQL
+    AgentOrch --> TimescaleDB
+    AgentOrch --> S3
+    AgentOrch --> LLM
+    AgentOrch --> Sentiment
+    AgentOrch --> Translation
+    AgentOrch --> MLServing
+    WebApp --> WebSocket
+    Kafka --> WebSocket
+    AgentOrch --> SocialPlatforms
+    AgentOrch --> BharatPlatforms
+    
+    WebApp -.-> Prometheus
+    APIGateway -.-> Prometheus
+    AgentOrch -.-> Prometheus
+    Prometheus --> Grafana
+    WebApp -.->|logs| ELK
+    APIGateway -.-> ELK
+    AgentOrch -.-> ELK
+    WebApp -.->|traces| Jaeger
+    APIGateway -.-> Jaeger
+    WebApp -.->|errors| Sentry
+    APIGateway -.-> Sentry
+    
+    classDef lbNode fill:#add8e6,stroke:#333,stroke-width:2px
+    classDef appNode fill:#add8e6,stroke:#333,stroke-width:2px
+    classDef dataNode fill:#90ee90,stroke:#333,stroke-width:2px
+    classDef aiNode fill:#ffffe0,stroke:#333,stroke-width:2px
+    classDef msgNode fill:#ffb6c1,stroke:#333,stroke-width:2px
+    classDef monNode fill:#e6e6fa,stroke:#333,stroke-width:2px
+    classDef extNode fill:#f5deb3,stroke:#333,stroke-width:2px
 ```
 
 *Infrastructure showing: Load balancer → Application tier (Web/API/Agents) → Data tier (PostgreSQL/TimescaleDB/Redis/S3) → AI/ML tier → Messaging (Kafka/WebSocket) → Monitoring stack → External platform APIs*
