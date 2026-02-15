@@ -19,51 +19,51 @@ The platform addresses three critical pain points: (1) time-intensive repetitive
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Command Center (Web UI)                   │
+│                    Command Center (Web UI)                  │
 │  • Unified Inbox  • Content Calendar  • Crisis Dashboard    │
 │  • Analytics View • Deal Pipeline     • Creator Switcher    │
 └─────────────────────────────────────────────────────────────┘
                               ↓ REST API
 ┌─────────────────────────────────────────────────────────────┐
-│                    API Gateway Layer                         │
+│                    API Gateway Layer                        │
 │  • Authentication  • Rate Limiting  • Request Routing       │
 └─────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
-│                  Agent Orchestration Layer                   │
-│                                                              │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │   Content    │  │    Trend     │  │    Crisis    │     │
-│  │    Agent     │  │    Agent     │  │    Agent     │     │
-│  └──────────────┘  └──────────────┘  └──────────────┘     │
-│                                                              │
-│  ┌──────────────┐  ┌──────────────┐                        │
-│  │     Deal     │  │  Analytics   │                        │
-│  │    Agent     │  │    Agent     │                        │
-│  └──────────────┘  └──────────────┘                        │
-│                                                              │
-│              Message Bus (Event-Driven Communication)        │
+│                  Agent Orchestration Layer                  │
+│                                                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
+│  │   Content    │  │    Trend     │  │    Crisis    │       │
+│  │    Agent     │  │    Agent     │  │    Agent     │       │
+│  └──────────────┘  └──────────────┘  └──────────────┘       │
+│                                                             │
+│  ┌──────────────┐  ┌──────────────┐                         │
+│  │     Deal     │  │  Analytics   │                         │
+│  │    Agent     │  │    Agent     │                         │
+│  └──────────────┘  └──────────────┘                         │
+│                                                             │
+│              Message Bus (Event-Driven Communication)       │
 └─────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
-│                      Data Layer                              │
-│                                                              │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │  Creator DNA │  │   Content    │  │  Analytics   │     │
-│  │   Database   │  │   Database   │  │   Database   │     │
-│  └──────────────┘  └──────────────┘  └──────────────┘     │
-│                                                              │
-│  ┌──────────────┐  ┌──────────────┐                        │
-│  │    Crisis    │  │  Brand Deal  │                        │
-│  │   Database   │  │   Database   │                        │
-│  └──────────────┘  └──────────────┘                        │
+│                      Data Layer                             │
+│                                                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
+│  │  Creator DNA │  │   Content    │  │  Analytics   │       │
+│  │   Database   │  │   Database   │  │   Database   │       │
+│  └──────────────┘  └──────────────┘  └──────────────┘       │
+│                                                             │
+│  ┌──────────────┐  ┌──────────────┐                         │
+│  │    Crisis    │  │  Brand Deal  │                         │
+│  │   Database   │  │   Database   │                         │
+│  └──────────────┘  └──────────────┘                         │
 └─────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
-│              Platform Integration Layer                      │
-│                                                              │
+│              Platform Integration Layer                     │
+│                                                             │
 │  Global: Instagram, YouTube, TikTok, X, LinkedIn, Facebook  │
-│  Bharat: ShareChat, Moj, Josh, Chingari                    │
+│  Bharat: ShareChat, Moj, Josh, Chingari                     │
 │  Services: Sentiment API, Translation API, LLM API          │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -91,6 +91,42 @@ User Request → API Gateway → Orchestrator → Agent Selection → Agent Exec
 - Supports conditional routing based on agent outputs
 - Enables human-in-the-loop checkpoints for critical decisions
 - Better suited for complex, stateful workflows than CrewAI or AutoGen
+
+### Agent Communication Flow Diagram
+
+```mermaid
+graph LR
+    UserRequest([User Request]):::userNode --> APIGateway[API Gateway]:::apiNode
+    APIGateway -->|Authenticated Request| Orchestrator{Orchestrator<br/>Supervisor Pattern}:::orchNode
+    Orchestrator --> AgentSelection{Agent<br/>Selection}:::decisionNode
+    
+    AgentSelection -->|content| ContentAgent[Content Agent]:::agentNode
+    AgentSelection -->|trend| TrendAgent[Trend Agent]:::agentNode
+    AgentSelection -->|crisis| CrisisAgent[Crisis Agent]:::agentNode
+    AgentSelection -->|deal| DealAgent[Deal Agent]:::agentNode
+    AgentSelection -->|analytics| AnalyticsAgent[Analytics Agent]:::agentNode
+    
+    ContentAgent -.->|event| MessageBus[(Message Bus<br/>Event Stream)]:::busNode
+    TrendAgent -.->|event| MessageBus
+    CrisisAgent -.->|event| MessageBus
+    DealAgent -.->|event| MessageBus
+    AnalyticsAgent -.->|event| MessageBus
+    
+    MessageBus ==>|notify| DependentAgents[Dependent Agents<br/>React to Events]:::depNode
+    
+    ContentAgent -.-> Response([Response]):::userNode
+    DependentAgents -.-> Response
+    
+    classDef userNode fill:#add8e6,stroke:#333,stroke-width:2px
+    classDef apiNode fill:#90ee90,stroke:#333,stroke-width:2px
+    classDef orchNode fill:#e6e6fa,stroke:#333,stroke-width:2px
+    classDef decisionNode fill:#ffffe0,stroke:#333,stroke-width:2px
+    classDef agentNode fill:#ffa07a,stroke:#333,stroke-width:2px
+    classDef busNode fill:#ffb6c1,stroke:#333,stroke-width:2px
+    classDef depNode fill:#e0ffff,stroke:#333,stroke-width:2px
+```
+
+*Diagram shows: User request → API Gateway → Orchestrator → Agent selection → Agents publish events to Message Bus → Dependent agents react*
 
 ## Components and Interfaces
 
@@ -140,6 +176,46 @@ interface GeneratedContent {
 - LLM API (GPT-4, Claude, or similar)
 - Translation API for regional languages
 - Analytics Agent (for performance prediction)
+
+#### Content Generation Workflow
+
+```mermaid
+flowchart TB
+    Start([Content<br/>Request]):::startNode --> Validate{Validate<br/>Request}:::decisionNode
+    Validate -->|valid| LoadDNA[Load Creator<br/>DNA Profile]:::processNode
+    Validate -->|invalid| Error([Error]):::errorNode
+    LoadDNA --> CheckTrend{Trend-Based?}:::decisionNode
+    CheckTrend -->|yes| LoadTrend[Load Trend<br/>Data]:::trendNode
+    CheckTrend -->|no| Generate[Generate Content<br/>LLM]:::llmNode
+    LoadTrend --> Generate
+    Generate --> Optimize[Platform<br/>Optimization]:::trendNode
+    Optimize --> Translate{Translate?}:::decisionNode
+    Translate -->|yes| DoTranslate[Translate<br/>Preserve Culture]:::translateNode
+    Translate -->|no| Score[Style Match<br/>Score]:::scoreNode
+    DoTranslate --> Score
+    Score --> Predict[Performance<br/>Prediction]:::predictNode
+    Predict --> CheckConf{Confidence<br/>OK?}:::decisionNode
+    CheckConf -->|yes| Save[Save to<br/>Database]:::saveNode
+    CheckConf -->|no| Flag[Flag for<br/>Review]:::flagNode
+    Flag --> Save
+    Save --> Publish[(Publish Event)]:::busNode
+    Publish --> End([Return<br/>Response]):::startNode
+    
+    classDef startNode fill:#add8e6,stroke:#333,stroke-width:2px
+    classDef decisionNode fill:#ffffe0,stroke:#333,stroke-width:2px
+    classDef processNode fill:#90ee90,stroke:#333,stroke-width:2px
+    classDef trendNode fill:#ffffe0,stroke:#333,stroke-width:2px
+    classDef llmNode fill:#ffa07a,stroke:#333,stroke-width:2px
+    classDef translateNode fill:#e6e6fa,stroke:#333,stroke-width:2px
+    classDef scoreNode fill:#e0ffff,stroke:#333,stroke-width:2px
+    classDef predictNode fill:#dda0dd,stroke:#333,stroke-width:2px
+    classDef flagNode fill:#ffb6c1,stroke:#333,stroke-width:2px
+    classDef saveNode fill:#d3d3d3,stroke:#333,stroke-width:2px
+    classDef busNode fill:#ffe4e1,stroke:#333,stroke-width:2px
+    classDef errorNode fill:#ffb6c1,stroke:#333,stroke-width:2px
+```
+
+*Workflow shows: DNA loading → trend handling → LLM generation → platform optimization → translation → scoring → prediction*
 
 ### 2. Trend Agent
 
@@ -249,6 +325,57 @@ interface OutcomeSimulation {
 - Platform APIs (for real-time comment/mention streams)
 - Crisis Database (for historical crisis data)
 - Notification Service (email, SMS, in-app)
+
+#### Crisis Detection Workflow
+
+```mermaid
+flowchart TB
+    Start([Real-Time<br/>Monitoring]):::startNode --> Stream[Stream Platform<br/>Data]:::streamNode
+    Stream --> Analyze[Analyze<br/>Sentiment]:::analyzeNode
+    Analyze --> Update[Update 7-Day<br/>History]:::updateNode
+    Update --> CheckAnomaly{Sentiment Drop<br/>>0.3 in 1hr?}:::decisionNode
+    CheckAnomaly -->|yes| CalcThreat[Calculate<br/>Threat Level]:::calcNode
+    CheckAnomaly -.->|no| Stream
+    CalcThreat --> Classify{Classify<br/>Threat}:::decisionNode
+    Classify -->|low| LogLow[Log Event<br/>Low]:::logNode
+    Classify -->|med/high/critical| CreateCrisis[Create Crisis<br/>Event]:::crisisNode
+    LogLow -.-> Stream
+    CreateCrisis --> GenStrategies[Generate 3-5<br/>Strategies]:::strategyNode
+    GenStrategies --> Simulate[Simulate<br/>Outcomes]:::simulateNode
+    Simulate --> Notify[Send<br/>Notifications]:::notifyNode
+    Notify --> Display[Display Alert<br/>Banner]:::displayNode
+    Display --> PublishEvent[(Publish<br/>Event)]:::busNode
+    PublishEvent --> Wait[/Wait for<br/>Response/]:::waitNode
+    Wait --> Execute[Execute<br/>Strategy]:::execNode
+    Execute --> Track[Track<br/>Outcome]:::trackNode
+    Track --> UpdateModels[Update<br/>Models]:::modelNode
+    UpdateModels --> End([Resolved]):::endNode
+    
+    Note[Target: ≤8 min<br/>detection]:::noteNode
+    CheckAnomaly -.-> Note
+    
+    classDef startNode fill:#add8e6,stroke:#333,stroke-width:2px
+    classDef streamNode fill:#e0ffff,stroke:#333,stroke-width:2px
+    classDef analyzeNode fill:#e6e6fa,stroke:#333,stroke-width:2px
+    classDef updateNode fill:#d3d3d3,stroke:#333,stroke-width:2px
+    classDef decisionNode fill:#ffffe0,stroke:#333,stroke-width:2px
+    classDef calcNode fill:#ffffe0,stroke:#333,stroke-width:2px
+    classDef logNode fill:#90ee90,stroke:#333,stroke-width:2px
+    classDef crisisNode fill:#ffb6c1,stroke:#333,stroke-width:2px
+    classDef strategyNode fill:#ffa07a,stroke:#333,stroke-width:2px
+    classDef simulateNode fill:#dda0dd,stroke:#333,stroke-width:2px
+    classDef notifyNode fill:#ffe4e1,stroke:#333,stroke-width:2px
+    classDef displayNode fill:#f08080,stroke:#333,stroke-width:2px
+    classDef busNode fill:#ffe4e1,stroke:#333,stroke-width:2px
+    classDef waitNode fill:#add8e6,stroke:#333,stroke-width:2px
+    classDef execNode fill:#ffffe0,stroke:#333,stroke-width:2px
+    classDef trackNode fill:#e0ffff,stroke:#333,stroke-width:2px
+    classDef modelNode fill:#e6e6fa,stroke:#333,stroke-width:2px
+    classDef endNode fill:#90ee90,stroke:#333,stroke-width:2px
+    classDef noteNode fill:#ffff00,stroke:#333,stroke-width:2px
+```
+
+*Workflow shows: Real-time monitoring → sentiment analysis → anomaly detection (8-min target) → threat classification → strategy generation → outcome simulation*
 
 ### 4. Deal Agent
 
@@ -647,6 +774,119 @@ type RegionalLanguage =
   | 'punjabi' 
   | 'odia'
 ```
+
+### Data Model Relationships Diagram
+
+```mermaid
+erDiagram
+    Creator ||--|| CreatorDNA : has
+    Creator ||--o{ Content : creates
+    Creator ||--o{ CrisisEvent : experiences
+    Creator ||--o{ BrandDeal : negotiates
+    Creator ||--|| MediaKit : owns
+    Creator ||--o{ PlatformConnection : "connects via"
+    
+    CreatorDNA ||..o{ Content : influences
+    Content ||--|| Performance : has
+    Content }o..|| TrendAlert : "responds to"
+    
+    CrisisEvent ||--o{ ResponseStrategy : generates
+    BrandDeal }o..|| MediaKit : uses
+    TrendAlert }o..o{ Content : triggers
+    TrendAlert }o..o{ Creator : suggests
+    
+    PlatformConnection }o..o{ Content : publishes
+    PlatformConnection }o..o{ Performance : syncs
+    
+    Creator {
+        string creatorId PK
+        string name
+        string[] platforms
+        string status
+    }
+    
+    CreatorDNA {
+        string creatorId FK
+        int version
+        object linguistics
+        object style
+        object contentPatterns
+        float confidenceScore
+    }
+    
+    Content {
+        string contentId PK
+        string creatorId FK
+        string text
+        string[] platforms
+        string status
+        string generatedBy
+        float confidenceScore
+    }
+    
+    Performance {
+        string contentId FK
+        int likes
+        int comments
+        int shares
+        int views
+        float engagementRate
+    }
+    
+    CrisisEvent {
+        string crisisId PK
+        string creatorId FK
+        string threatLevel
+        float sentimentDrop
+        string[] affectedPlatforms
+        string status
+    }
+    
+    ResponseStrategy {
+        string strategyId PK
+        string crisisId FK
+        string type
+        string responseText
+        object estimatedImpact
+    }
+    
+    BrandDeal {
+        string dealId PK
+        string creatorId FK
+        string brandName
+        string status
+        float proposedRate
+        float finalRate
+    }
+    
+    MediaKit {
+        string creatorId FK
+        object followerCounts
+        object engagementRates
+        object audienceDemographics
+        string pdfUrl
+    }
+    
+    PlatformConnection {
+        string connectionId PK
+        string creatorId FK
+        string platform
+        string status
+        string accessToken
+        datetime lastSyncAt
+    }
+    
+    TrendAlert {
+        string trendId PK
+        string topic
+        string[] platforms
+        string urgencyLevel
+        datetime predictedPeakTime
+        string[] suggestedCreators
+    }
+```
+
+*Entity relationships showing: Creator as central entity → DNA profiles → Content generation → Performance tracking → Crisis/Deal/Trend workflows*
 
 ## Correctness Properties
 
@@ -1314,6 +1554,94 @@ Feature: {feature_name}, Property {number}: {property_text}
 - RPO (Recovery Point Objective): 1 hour
 - Automated failover for critical services
 - Regular disaster recovery drills (quarterly)
+
+### Deployment Architecture Diagram
+
+```mermaid
+graph TB
+    LoadBalancer{{Load Balancer}}:::lbNode
+    
+    subgraph AppTier["Application Tier"]
+        WebApp[Web App<br/>React/Next.js]:::appNode
+        APIGateway[API Gateway<br/>Node.js/FastAPI]:::appNode
+        AgentOrch[Agent Orchestration<br/>LangGraph]:::appNode
+        BackgroundJobs[Background Jobs<br/>Celery/Bull]:::appNode
+    end
+    
+    subgraph DataTier["Data Tier"]
+        PostgreSQL[(PostgreSQL<br/>Primary DB)]:::dataNode
+        TimescaleDB[(TimescaleDB<br/>Time-Series)]:::dataNode
+        Redis[(Redis<br/>Cache)]:::dataNode
+        S3[(S3<br/>Object Storage)]:::dataNode
+    end
+    
+    subgraph AITier["AI/ML Tier"]
+        LLM[LLM API<br/>GPT-4/Claude]:::aiNode
+        Sentiment[Sentiment API<br/>Hugging Face]:::aiNode
+        Translation[Translation API<br/>Google/DeepL]:::aiNode
+        MLServing[ML Serving<br/>TF/PyTorch]:::aiNode
+    end
+    
+    subgraph Messaging["Messaging"]
+        Kafka[(Kafka<br/>Events)]:::msgNode
+        WebSocket[WebSocket<br/>Real-Time]:::msgNode
+    end
+    
+    subgraph Monitoring["Monitoring"]
+        Prometheus[Prometheus]:::monNode
+        Grafana[Grafana]:::monNode
+        ELK[ELK Stack]:::monNode
+        Jaeger[Jaeger]:::monNode
+        Sentry[Sentry]:::monNode
+    end
+    
+    subgraph External["External APIs"]
+        SocialPlatforms{{Social Platforms<br/>Instagram, YouTube<br/>TikTok, X, etc.}}:::extNode
+        BharatPlatforms{{Bharat Platforms<br/>ShareChat, Moj<br/>Josh, Chingari}}:::extNode
+    end
+    
+    LoadBalancer --> WebApp
+    LoadBalancer --> APIGateway
+    WebApp --> APIGateway
+    APIGateway --> AgentOrch
+    APIGateway -->|cache| Redis
+    AgentOrch --> BackgroundJobs
+    AgentOrch -->|publish| Kafka
+    BackgroundJobs -->|consume| Kafka
+    AgentOrch --> PostgreSQL
+    AgentOrch --> TimescaleDB
+    AgentOrch --> S3
+    AgentOrch --> LLM
+    AgentOrch --> Sentiment
+    AgentOrch --> Translation
+    AgentOrch --> MLServing
+    WebApp --> WebSocket
+    Kafka --> WebSocket
+    AgentOrch --> SocialPlatforms
+    AgentOrch --> BharatPlatforms
+    
+    WebApp -.-> Prometheus
+    APIGateway -.-> Prometheus
+    AgentOrch -.-> Prometheus
+    Prometheus --> Grafana
+    WebApp -.->|logs| ELK
+    APIGateway -.-> ELK
+    AgentOrch -.-> ELK
+    WebApp -.->|traces| Jaeger
+    APIGateway -.-> Jaeger
+    WebApp -.->|errors| Sentry
+    APIGateway -.-> Sentry
+    
+    classDef lbNode fill:#add8e6,stroke:#333,stroke-width:2px
+    classDef appNode fill:#add8e6,stroke:#333,stroke-width:2px
+    classDef dataNode fill:#90ee90,stroke:#333,stroke-width:2px
+    classDef aiNode fill:#ffffe0,stroke:#333,stroke-width:2px
+    classDef msgNode fill:#ffb6c1,stroke:#333,stroke-width:2px
+    classDef monNode fill:#e6e6fa,stroke:#333,stroke-width:2px
+    classDef extNode fill:#f5deb3,stroke:#333,stroke-width:2px
+```
+
+*Infrastructure showing: Load balancer → Application tier (Web/API/Agents) → Data tier (PostgreSQL/TimescaleDB/Redis/S3) → AI/ML tier → Messaging (Kafka/WebSocket) → Monitoring stack → External platform APIs*
 
 ## Future Enhancements
 
